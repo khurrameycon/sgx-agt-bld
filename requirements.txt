@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+requests
+python-dotenv
+crewai
+huggingface_hub
+transformers
+jinja2
+python-multipart

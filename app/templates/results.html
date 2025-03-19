@@ -1,0 +1,279 @@
+<!-- app/templates/results.html (updated) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Results - Dynamic Agent Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Add Markdown rendering library -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // Poll for task status updates
+        function pollTaskStatus() {
+            const taskId = document.getElementById('task-id').textContent;
+            
+            fetch(`/api/tasks/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update status
+                    document.getElementById('task-status').textContent = data.status;
+                    
+                    // Update progress bar
+                    const progressBar = document.getElementById('progress-bar');
+                    progressBar.style.width = `${Math.round(data.progress * 100)}%`;
+                    document.getElementById('progress-percentage').textContent = `${Math.round(data.progress * 100)}%`;
+                    
+                    // Update result or error if available
+                    if (data.result) {
+                        document.getElementById('result-container').classList.remove('hidden');
+                        
+                        // If result is markdown, render it
+                        if (typeof data.result === 'string' && (data.result.includes('#') || data.result.includes('**'))) {
+                            const renderedHTML = marked.parse(data.result);
+                            document.getElementById('markdown-result').innerHTML = renderedHTML;
+                            document.getElementById('markdown-result').classList.remove('hidden');
+                            document.getElementById('raw-result').classList.add('hidden');
+                        } else {
+                            document.getElementById('raw-result').textContent = typeof data.result === 'object' ? 
+                                JSON.stringify(data.result, null, 2) : data.result;
+                            document.getElementById('raw-result').classList.remove('hidden');
+                            document.getElementById('markdown-result').classList.add('hidden');
+                        }
+                        
+                        // Show download link if result file is available
+                        if (data.result_file) {
+                            document.getElementById('download-container').classList.remove('hidden');
+                            document.getElementById('download-link').href = `/download?file=${encodeURIComponent(data.result_file)}`;
+                        }
+                    }
+                    
+                    if (data.error) {
+                        document.getElementById('error-container').classList.remove('hidden');
+                        document.getElementById('error-message').textContent = data.error;
+                    }
+                    
+                    // Continue polling if task is not completed or failed
+                    if (data.status !== 'completed' && data.status !== 'failed') {
+                        setTimeout(pollTaskStatus, 2000);
+                    } else {
+                        document.getElementById('loading-spinner').classList.add('hidden');
+                        
+                        if (data.status === 'completed') {
+                            document.getElementById('completion-message').classList.remove('hidden');
+                            
+                            // Show save agent/crew buttons
+                            document.getElementById('save-options').classList.remove('hidden');
+                        }
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('error-container').classList.remove('hidden');
+                    document.getElementById('error-message').textContent = `Error fetching task status: ${error.message}`;
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                });
+        }
+        
+        // Start polling when page loads
+        window.onload = function() {
+            pollTaskStatus();
+        };
+    </script>
+    <style>
+        /* Add styles for markdown rendering */
+        #markdown-result {
+            line-height: 1.6;
+        }
+        #markdown-result h1 {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #markdown-result h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #markdown-result h3 {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #markdown-result p {
+            margin-bottom: 0.75rem;
+        }
+        #markdown-result ul, #markdown-result ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        #markdown-result li {
+            margin-bottom: 0.25rem;
+        }
+        #markdown-result code {
+            background-color: #f1f1f1;
+            padding: 0.1rem 0.2rem;
+            border-radius: 0.25rem;
+        }
+        #markdown-result pre {
+            background-color: #f1f1f1;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            overflow-x: auto;
+            margin-bottom: 0.75rem;
+        }
+        #markdown-result blockquote {
+            border-left: 4px solid #e2e8f0;
+            padding-left: 1rem;
+            color: #4a5568;
+            margin-bottom: 0.75rem;
+        }
+        #markdown-result table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+        #markdown-result th, #markdown-result td {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+        }
+        #markdown-result th {
+            background-color: #f7fafc;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <header class="bg-white shadow rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Task Results</h1>
+            <p class="text-gray-600 mt-2">Task ID: <span id="task-id">{{ task_id }}</span></p>
+            <div class="flex space-x-4 mt-2">
+                <a href="/" class="text-indigo-600 hover:text-indigo-800">← Back to Home</a>
+                <a href="/agents" class="text-indigo-600 hover:text-indigo-800">View Saved Agents</a>
+                <a href="/results" class="text-indigo-600 hover:text-indigo-800">All Results</a>
+            </div>
+        </header>
+
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Task Status</h2>
+            
+            <div class="mb-4">
+                <p class="text-gray-700">Status: <span id="task-status" class="font-semibold">{{ task_info.status }}</span></p>
+                <p class="text-gray-700">Prompt: <span class="italic">{{ task_info.prompt }}</span></p>
+                <p class="text-gray-700">Models: 
+                    <span class="font-semibold">Analysis: {{ task_info.model_id }}</span> |
+                    <span class="font-semibold">Agents: {{ task_info.ollama_model_id }}</span>
+                </p>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-gray-700 mb-2">Progress:</p>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div 
+                        id="progress-bar" 
+                        class="bg-indigo-600 h-4 rounded-full transition-all duration-500 ease-in-out" 
+                        style="width: {{ task_info.progress * 100 }}%"
+                    ></div>
+                </div>
+                <p class="text-gray-600 text-right mt-1"><span id="progress-percentage">{{ task_info.progress * 100 }}%</span> complete</p>
+            </div>
+            
+            <div id="loading-spinner" class="flex justify-center items-center my-8 {% if task_info.status == 'completed' or task_info.status == 'failed' %}hidden{% endif %}">
+                <svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="ml-3 text-indigo-600 font-medium">Processing your task...</p>
+            </div>
+            
+            <div id="completion-message" class="bg-green-100 p-4 rounded-md my-4 {% if task_info.status != 'completed' %}hidden{% endif %}">
+                <p class="text-green-800 font-medium">Task completed successfully!</p>
+            </div>
+            
+            <!-- Save options -->
+            <div id="save-options" class="mt-6 {% if task_info.status != 'completed' %}hidden{% endif %}">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Reuse Options</h3>
+                <div class="flex space-x-4">
+                    <a href="/reuse_crew?task_id={{ task_id }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Reuse Entire Crew
+                    </a>
+                    <a href="/customize_agents?task_id={{ task_id }}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Customize Agents
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task Analysis Section -->
+        {% if task_info.analysis %}
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Task Analysis</h2>
+            
+            <div class="mb-4">
+                <p class="text-gray-700">Complexity: <span class="font-semibold">{{ task_info.analysis.complexity }}/10</span></p>
+                <p class="text-gray-700">Estimated Time: <span class="font-semibold">{{ task_info.analysis.estimated_time }}</span></p>
+                <p class="text-gray-700">Workflow Type: <span class="font-semibold">{{ task_info.analysis.workflow_type }}</span></p>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-gray-700 font-semibold mb-2">Agents:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for agent in task_info.analysis.required_agents %}
+                    <div class="border border-gray-200 rounded-md p-4">
+                        <p class="font-semibold text-indigo-600">{{ agent.role }}</p>
+                        <p class="text-gray-700 mb-1"><span class="font-medium">Goal:</span> {{ agent.goal }}</p>
+                        <p class="text-gray-700 mb-1"><span class="font-medium">Backstory:</span> {{ agent.backstory }}</p>
+                        <p class="text-gray-700 mb-1">
+                            <span class="font-medium">Tools:</span> 
+                            {% for tool in agent.tools %}
+                            <span class="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs font-semibold text-gray-700 mr-1 mb-1">{{ tool }}</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Download Container -->
+        <div id="download-container" class="bg-white shadow rounded-lg p-6 mb-8 {% if not task_info.result_file %}hidden{% endif %}">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Download Result</h2>
+            <p class="text-gray-700 mb-4">The results have been saved as a Markdown file for easy viewing and sharing.</p>
+            <a 
+                id="download-link" 
+                href="{% if task_info.result_file %}/download?file={{ task_info.result_file }}{% else %}#{% endif %}" 
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                download
+            >
+                Download Markdown
+            </a>
+        </div>
+        
+        <!-- Result Section -->
+        <div id="result-container" class="bg-white shadow rounded-lg p-6 mb-8 {% if not task_info.result %}hidden{% endif %}">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Task Result</h2>
+            
+            <!-- Markdown rendered result -->
+            <div id="markdown-result" class="bg-white p-4 rounded-md overflow-auto max-h-screen {% if not task_info.result or not (task_info.result is string and ('#' in task_info.result or '**' in task_info.result)) %}hidden{% endif %}">
+                {% if task_info.result is string and ('#' in task_info.result or '**' in task_info.result) %}
+                    <script>
+                        document.getElementById('markdown-result').innerHTML = marked.parse(`{{ task_info.result|replace("\"", "\\\"") }}`);
+                    </script>
+                {% endif %}
+            </div>
+            
+            <!-- Raw result display -->
+            <pre id="raw-result" class="bg-gray-100 p-4 rounded-md overflow-auto max-h-96 {% if not task_info.result or (task_info.result is string and ('#' in task_info.result or '**' in task_info.result)) %}hidden{% endif %}">{% if task_info.result %}{{ task_info.result if task_info.result is string else task_info.result|tojson(indent=2) }}{% endif %}</pre>
+        </div>
+        
+        <!-- Error Section -->
+        <div id="error-container" class="bg-red-100 p-6 rounded-lg mb-8 {% if not task_info.error %}hidden{% endif %}">
+            <h2 class="text-2xl font-semibold text-red-800 mb-4">Error</h2>
+            <p id="error-message" class="text-red-700">{{ task_info.error }}</p>
+        </div>
+    </div>
+</body>
+</html>

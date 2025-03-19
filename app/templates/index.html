@@ -1,0 +1,124 @@
+<!-- app/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Agent Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <header class="bg-white shadow rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Dynamic Agent Platform</h1>
+            <p class="text-gray-600 mt-2">Create and run dynamic agent systems powered by Hugging Face and Ollama models with CrewAI</p>
+        </header>
+
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Create a New Task</h2>
+            
+            <form action="/submit_task" method="post" class="space-y-6">
+                <div>
+                    <label for="prompt" class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                    <textarea 
+                        id="prompt" 
+                        name="prompt" 
+                        rows="5" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Describe the task you want the agents to perform..."
+                        required
+                    ></textarea>
+                    <p class="text-sm text-gray-500 mt-1">Be specific about what you want to accomplish</p>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="model_id" class="block text-sm font-medium text-gray-700 mb-1">Analysis Model (Hugging Face)</label>
+                        <select 
+                            id="model_id" 
+                            name="model_id" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            {% for model in models %}
+                            <option value="{{ model.id }}" {% if model.id == default_model_id %}selected{% endif %}>
+                                {{ model.name }} - {{ model.description }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-sm text-gray-500 mt-1">Hugging Face model for task analysis</p>
+                    </div>
+                    
+                    <div>
+                        <label for="ollama_model" class="block text-sm font-medium text-gray-700 mb-1">Agent Model (Ollama)</label>
+                        <select 
+                            id="ollama_model" 
+                            name="ollama_model" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            {% for model in ollama_models %}
+                            <option value="{{ model.id }}" {% if model.id == default_ollama_model_id %}selected{% endif %}>
+                                {{ model.name }} - {{ model.description }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <p class="text-sm text-gray-500 mt-1">Ollama model for agent execution</p>
+                    </div>
+                </div>
+
+                <!-- Agent and Timeout Configuration -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="max_agents" class="block text-sm font-medium text-gray-700 mb-1">Maximum Agents</label>
+                        <input 
+                            type="number" 
+                            id="max_agents" 
+                            name="max_agents" 
+                            min="1" 
+                            max="10" 
+                            value="{{ max_agents }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                        <p class="text-sm text-gray-500 mt-1">Limit the number of agents to create</p>
+                    </div>
+
+                    <div>
+                        <label for="timeout_minutes" class="block text-sm font-medium text-gray-700 mb-1">Timeout (minutes)</label>
+                        <input 
+                            type="number" 
+                            id="timeout_minutes" 
+                            name="timeout_minutes" 
+                            min="1" 
+                            max="60" 
+                            value="{{ default_timeout }}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                        <p class="text-sm text-gray-500 mt-1">Maximum execution time</p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button 
+                        type="submit"
+                        class="w-full inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Create Task
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">About This Platform</h2>
+            <p class="text-gray-700 mb-4">
+                This platform uses CrewAI to create dynamic agent systems that can collaborate to solve tasks.
+                Task analysis is performed using Hugging Face models, while agents are powered by Ollama running locally.
+            </p>
+            <p class="text-gray-700 mb-4">
+                <strong>Requirements:</strong> Make sure Ollama is running locally with the desired models installed.
+                To install models, use <code>ollama pull model_name</code> (e.g., <code>ollama pull deepseek-r1:14b</code>).
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!-- app/templates/saved_agents.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Agents - Dynamic Agent Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <header class="bg-white shadow rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Saved Agents & Crews</h1>
+            <p class="text-gray-600 mt-2">Reuse your created agents and crews for new tasks</p>
+            <div class="mt-4 flex space-x-4">
+                <a href="/" class="text-indigo-600 hover:text-indigo-800">← Back to Home</a>
+                <a href="/results" class="text-indigo-600 hover:text-indigo-800">View Results</a>
+            </div>
+        </header>
+
+        <!-- Saved Crews Section -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Saved Crews</h2>
+            
+            {% if crews %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Workflow</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agents</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for crew in crews %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ crew.name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ crew.workflow_type }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-500">
+                                            {% for role in crew.agent_roles %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
+                                                    {{ role }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-500">{{ crew.created_at }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="/reuse_crew?crew_id={{ crew.filename }}" class="text-indigo-600 hover:text-indigo-900">Reuse</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-500">No saved crews found. Create a task to generate crews.</p>
+            {% endif %}
+        </div>
+
+        <!-- Agent Collections Section -->
+        <div class="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Agent Collections</h2>
+            
+            {% if collections %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for collection in collections %}
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-900">{{ collection.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ collection.agent_count }} agents</p>
+                            </div>
+                            <div class="p-4">
+                                <div class="mb-3">
+                                    {% for agent_type in collection.agent_types %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
+                                            {{ agent_type }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-sm text-gray-500 mb-4">
+                                    Created: {{ collection.created_at }}
+                                </div>
+                                <a href="/collection?name={{ collection.name }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                    View Collection →
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500">No agent collections found. Create a task to generate agents.</p>
+            {% endif %}
+        </div>
+
+        <!-- Individual Agents Section -->
+        {% if show_all_agents %}
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">All Agents</h2>
+                
+                {% if agents %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Goal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tools</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Collection</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for agent in agents %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ agent.role }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-500">{{ agent.goal }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-500">
+                                                {% for tool in agent.tools %}
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-1">
+                                                        {{ tool }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-500">{{ agent.collection }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="/agent_details?file={{ agent.file_path }}" class="text-indigo-600 hover:text-indigo-900 mr-4">View</a>
+                                            <a href="/reuse_agent?file={{ agent.file_path }}" class="text-indigo-600 hover:text-indigo-900">Reuse</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-500">No agents found. Create a task to generate agents.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
